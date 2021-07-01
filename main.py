@@ -22,7 +22,7 @@ async def _(event):
 
 @bot.on(events.NewMessage(pattern="/ping", chats=main_group_id))
 async def _(event):
-    event.reply("Dont count me among the dead yet!!")
+    await event.reply("Dont count me among the dead yet!!")
 
 
 @bot.on(events.NewMessage(pattern="/spromote:", chats=main_group_id))
