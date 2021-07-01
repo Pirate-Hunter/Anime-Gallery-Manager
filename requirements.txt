@@ -1,2 +1,3 @@
 https://github.com/New-dev0/Telethon/archive/master.zip
 SQLAlchemy
+psycopg2
