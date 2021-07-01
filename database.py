@@ -34,6 +34,9 @@ APPROVE_INSERTION_LOCK = threading.RLock()
 
 def add_user(username):
     with APPROVE_INSERTION_LOCK:
+        add_user = SESSION.query(Channels).get(username)
+        if add_user is not None:
+            return
         user = Channels(username)
         SESSION.add(user)
         SESSION.commit()
