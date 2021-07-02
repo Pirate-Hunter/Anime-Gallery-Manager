@@ -65,6 +65,20 @@ async def fwd_function(event):
     await event.delete()
 
 
+@bot.on(events.NewMessage(pattern=("/add_power"), chats=main_group_id))
+async def add_power(event):
+    data = event.raw_text.split(":")
+    database.add_user(data[1])
+    event.reply("Added to my power")
+
+    
+@bot.on(events.NewMessage(pattern=("/remove_power"), chats=main_group_id))
+async def add_power(event):
+    data = event.raw_text.split(":")
+    database.remove_user(data[1])
+    event.reply("It was a worthless one anyway...")
+
+
 @bot.on(events.NewMessage(pattern=("/edit")))
 async def edit_function(event):
     split = event.raw_text.split(":")
@@ -99,10 +113,13 @@ async def sort(event):
 @bot.on(events.NewMessage(pattern=("/power")))
 async def power(event):
     channels = database.search()
-    string = ""
+    string = []
     for i in channels:
-        string = f"{string}\n@{i[0]}"
-    await bot.send_message(main_group_id, f"I have power over\n{string}")
+        string.append(i[0])
+    string.sort()
+    "\n@".join(string)
+    await bot.send_message(main_group_id, f"I have power over\n@{string}")
+
 
 @bot.on(events.NewMessage(pattern="/help", chats=main_group_id))
 async def help(event):
