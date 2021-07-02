@@ -117,7 +117,7 @@ async def power(event):
     for i in channels:
         string.append(i[0])
     string.sort()
-    "\n@".join(string)
+    string = "\n@".join(string)
     await bot.send_message(main_group_id, f"I have power over\n@{string}")
 
 
