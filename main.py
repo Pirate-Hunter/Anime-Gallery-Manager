@@ -30,7 +30,7 @@ async def _(event):
     data = event.raw_text.split(":")
     user = await bot.get_entity(f"t.me/{data[1]}")
     chat = await bot.get_entity(f"t.me/{data[2]}")
-    await bot.edit_admin(chat, user, change_info=True, post_messages=True, edit_messages=True, delete_messages=True, invite_users=True, manage_call=True, add_admins=True)
+    await bot.edit_admin(chat, user, change_info=True, post_messages=True, edit_messages=True, delete_messages=True, invite_users=True, add_admins=True)
     await event.reply("Promoted")
 
 
@@ -39,7 +39,7 @@ async def _(event):
     data = event.raw_text.split(":")
     user = await bot.get_entity(f"t.me/{data[1]}")
     chat = await bot.get_entity(f"t.me/{data[2]}")
-    await bot.edit_admin(chat, user, change_info=False, post_messages=False, edit_messages=False, delete_messages=False, invite_users=False, manage_call=False, add_admins=False)
+    await bot.edit_admin(chat, user, change_info=False, post_messages=False, edit_messages=False, delete_messages=False, invite_users=False, add_admins=False)
     await event.reply("Promoted")
 
 
