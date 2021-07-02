@@ -1,4 +1,4 @@
-from telethon import events
+from telethon import events, Button
 from telethon.tl.types import UpdateChannelParticipant
 from config import bot, main_group_id, bot_id
 import time
@@ -29,8 +29,10 @@ async def _(event):
 async def _(event):
     data = event.raw_text.split(":")
     user = await bot.get_entity(f"t.me/{data[1]}")
+    me = await bot.get_entity(bot_id)
     chat = await bot.get_entity(f"t.me/{data[2]}")
-    await bot.edit_admin(chat, user, change_info=True, post_messages=True, edit_messages=True, delete_messages=True, invite_users=True, add_admins=True)
+    perms = await bot.get_permissions(chat, me)
+    await bot.edit_admin(chat, user, change_info=perms.change_info, post_messages= perms.post_messages, edit_messages=perms.edit_messages, delete_messages=perms.delete_messages, invite_users=perms.invite_users, add_admins=perms.add_admins, manage_call=perms.manage_call)
     await event.reply("Promoted")
 
 
@@ -39,7 +41,7 @@ async def _(event):
     data = event.raw_text.split(":")
     user = await bot.get_entity(f"t.me/{data[1]}")
     chat = await bot.get_entity(f"t.me/{data[2]}")
-    await bot.edit_admin(chat, user, change_info=False, post_messages=False, edit_messages=False, delete_messages=False, invite_users=False, add_admins=False)
+    await bot.edit_admin(chat, user, change_info=False, post_messages=False, edit_messages=False, delete_messages=False, invite_users=False, add_admins=False, manage_call=False)
     await event.reply("Promoted")
 
 
@@ -110,20 +112,67 @@ async def sort(event):
         time.sleep(0.25)
 
 
-@bot.on(events.NewMessage(pattern=("/power")))
+@bot.on(events.NewMessage(pattern=("/power"), chats=main_group_id))
 async def power(event):
     channels = database.search()
     string = []
     for i in channels:
         string.append(i[0])
     string.sort()
-    string = "\n@".join(string)
-    await bot.send_message(main_group_id, f"I have power over\n@{string}")
+    if len(string) < 20:
+        "\n@".join(string)
+        await bot.send_message(main_group_id, f"I have power over\n\n{string}")
+        return
+    data = ""
+    for i in range(0, 20):
+        data = f"{data}\n{i+1}. @{string[i]}"
+    await bot.send_message(main_group_id, f"I have power over\n\n{data}", buttons=[Button.inline("Next", data=("page:0:20"))])
+
+
+@bot.on(events.CallbackQuery(pattern=(b"page:")))    
+async def page(event):
+    data = event.data.decode('utf-8')
+    data_split = data.split(':')
+    start = int(data_split[1])
+    end = int(data_split[2])
+    channels = database.search()
+    string = []
+    for i in channels:
+        string.append(i[0])
+    string.sort()
+
+    if len(string) <= end+20:
+        new_end = len(string)
+        buttons = [Button.inline("Previous", data=f"page:{start-20}:{end-20}")]
+    
+    elif start == -20:
+        new_end = 20
+        buttons = [Button.inline("Next", data=f"page:{end}:{new_end}")]
+
+    else:
+        new_end = end+20
+        buttons = [Button.inline("Previous", data=f"page:{start-20}:{end-20}"), Button.inline("Next", data=f"page:{end}:{new_end}")]
+    data = ""
+    for i in range(end, new_end):
+        data = f"{data}\n{i+1}. @{string[i]}"
+
+    try:
+        await event.edit(f"I have power over\n\n{data}", buttons=buttons)
+    except:
+        pass
 
 
 @bot.on(events.NewMessage(pattern="/help", chats=main_group_id))
 async def help(event):
-    await event.reply("`/start` and `/ping` Just to confirm\n`/spromote:<user>:<channel>`\n`/sdemote:<user>:<channel>`\n`/fwd`, `/edit` and `/sort' same as userbot\n`/power` check total channels bot has power in")
+    await event.reply("""
+`/start` and `/ping` Just to confirm
+`/spromote:<user>:<channel>`
+`/sdemote:<user>:<channel>`
+`/fwd`, `/edit` and `/sort' same as userbot
+`/power` check total channels bot has power in
+`/remove_power` removes channel from database(does not leave channel)
+`/add_power` adds channel to database(does not join channel)
+""")
 
 
 bot.start()
