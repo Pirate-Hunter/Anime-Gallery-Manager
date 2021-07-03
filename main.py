@@ -1,8 +1,16 @@
 from telethon import events, Button
 from telethon.tl.types import UpdateChannelParticipant
+from telethon.tl.functions.channels import GetFullChannelRequest
 from config import bot, main_group_id, bot_id
 import time
 import database
+from telethon.tl.types import InputWebDocument as wb
+import os
+from telegraph import Telegraph, upload_file
+
+telegraph = Telegraph()
+r = telegraph.create_account(short_name="Anime_Gallery_Manager")
+auth_url = r["auth_url"]
 
 @bot.on(events.Raw(UpdateChannelParticipant))
 async def update(event):
@@ -14,6 +22,52 @@ async def update(event):
         except:
             await bot.send_message(main_group_id, f"I just spread My power to {channel.title}")
 
+
+@bot.on(events.InlineQuery)
+async def handler(event):
+    if len(event.text) <= 4:
+        return
+    builder = event.builder
+    channels = database.search()
+    options = []
+    def parse_arg(arg):
+        arg = arg.lower()
+        arg = arg.replace(" ","")
+        arg = arg.replace("_","")
+        return arg
+
+    def parse_about(about):
+        unwanted_shit = ["Anime: @Anime_Gallery", "Group: @Anime_Discussion_Cafe", "Animes: @Anime_Gallery", "Anime:@Anime_Gallery", "Animes:@Anime_Gallery", "Group:@Anime_Discussion_Cafe"]
+        about = about.split("\n")
+        try:
+            for i in unwanted_shit:
+                if i in about:
+                    about.remove(i)
+        except:
+            pass
+        return "\n".join(about)                
+
+    for i in channels:
+        if parse_arg(event.text) in parse_arg(i[0]):
+            channel = await bot.get_entity(f"t.me/{i[0]}")
+            ch_full = await bot(GetFullChannelRequest(channel=channel))
+            pic = database.searchpfp(i[0])
+            if pic == None:
+                x = await bot.download_profile_photo(channel)
+                media_urls = upload_file(x)
+                os.remove(x)
+                database.add_pfp(i[0], media_urls[0])
+                pic = media_urls[0]
+
+            options.append(builder.article(
+                thumb=wb(f"https://telegra.ph{pic}", 0, "image/jpeg", []), 
+                title = channel.title,
+                description = f"@{i[0]}",
+                text = f"{parse_about(ch_full.full_chat.about)}\n Link [-](https://telegra.ph{pic}) @{i[0]}"))
+            if len(options) >= 5:
+                break
+    await event.answer(options)
+    
 
 @bot.on(events.NewMessage(pattern="/start", chats=main_group_id))
 async def _(event):
@@ -168,7 +222,7 @@ async def help(event):
 `/start` and `/ping` Just to confirm
 `/spromote:<user>:<channel>`
 `/sdemote:<user>:<channel>`
-`/fwd`, `/edit` and `/sort' same as userbot
+`/fwd`, `/edit` and `/sort` same as userbot
 `/power` check total channels bot has power in
 `/remove_power` removes channel from database(does not leave channel)
 `/add_power` adds channel to database(does not join channel)
